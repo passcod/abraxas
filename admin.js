@@ -32,6 +32,26 @@ exports.status = function (options,onComplete) {
     return task.endPartial();
 }
 
+exports.getuniquejobs = function (options,onComplete) {
+    if (options instanceof Function) { onComplete = options; options = null }
+    if (! options) options = {};
+    var responseTimeout = options.responseTimeout != null ? options.responseTimeout : this.options.responseTimeout;
+    var task = new ClientTask(onComplete);
+    if (responseTimeout) task.setResponseTimeout(responseTimeout);
+    task.beginPartial();
+    var uniques = [];
+    task.prepareResultWith(function(complete){ complete(uniques) });
+    this.getConnectedServers().forEach(function(conn) {
+        task.beginPartial();
+        conn.socket.adminTable('show unique jobs', function (err,table) {
+            if (err) return;
+            table.forEach(line => uniques.push(line));
+            task.endPartial();
+        }, ({ args: { line } }) => line);
+    });
+    return task.endPartial();
+}
+
 exports.workers = function (options,onComplete) {
     if (options instanceof Function) { onComplete = options; options = null }
     if (! options) options = {};
