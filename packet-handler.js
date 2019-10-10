@@ -26,7 +26,13 @@ PacketHandler.prototype._write = function (packet, encoding, callback) {
         name = 'ADMIN:'+name;
     }
     var job = packet.args.job;
-    if (job && this.byJobHandler[job] && this.byJobHandler[job][name]) return this.byJobHandler[job][name](packet);
+    if (job && this.byJobHandler[job] && this.byJobHandler[job][name] && this.byJobHandler[job][name].length) {
+        for (const handler of this.byJobHandler[job][name]) {
+            handler(packet);
+        }
+        return;
+    }
+
     if (this.handler[name]) return this.handler[name](packet);
     if (this.serialHandler[name] && this.serialHandler[name].length) return this.serialHandler[name].shift()(packet);
     if (this.defaultHandler[name]) return this.defaultHandler[name](packet);
@@ -97,14 +103,20 @@ PacketHandler.prototype.acceptSerialAdminWithError = function (event, callback) 
 
 PacketHandler.prototype.acceptByJob = function (event, id, callback) {
     if (!this.byJobHandler[id]) this.byJobHandler[id] = {};
-    if (this.byJobHandler[id][event]) throw new Error("Tried to register job "+id+" handler for "+event+" packet");
-    this.byJobHandler[id][event] = callback;
+    if (!this.byJobHandler[id][event]) this.byJobHandler[id][event] = [];
+    this.byJobHandler[id][event].push(callback);
 }
 
 PacketHandler.prototype.removeByJob = function (event, id, callback) {
-    if (!this.byJobHandler[id]) throw new Error("Tried to unregister "+event+" handler for job "+id+" but job doesn't exist");
-    delete this.byJobHandler[id][event];
-    if (!Object.keys(this.byJobHandler[id]).length) delete this.byJobHandler[id];
+    if (!this.byJobHandler[id]) return;
+    if (!this.byJobHandler[id][event]) return;
+    for (const [i, cb] of this.byJobHandler[id][event].entries()) {
+        if (callback == cb) this.byJobHandler[id][event][i] = null;
+    }
+
+    this.byJobHandler[id][event] = this.byJobHandler[id][event].filter(_=>_);
+    if (!this.byJobHandler[id][event].length) delete this.byJobHandler[id][event];
+    if (!this.byJobHandler[id].length) delete this.byJobHandler[id];
 }
 
 PacketHandler.prototype.acceptByJobOnce = function (event, id, callback) {
