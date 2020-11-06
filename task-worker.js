@@ -52,6 +52,14 @@ WorkerTask.prototype.status = function (percent) {
     if (!this.socket.connected) return;
     this.socket.workStatus(this.jobid, percent);
 }
+WorkerTask.prototype.progress = function (complete, total) {
+    if (!this.socket.connected) return;
+    this.socket.workProgress(this.jobid, complete, total);
+}
+WorkerTask.prototype.update = function (data) {
+    if (!this.socket.connected) return;
+    this.socket.workData(this.jobid, data);
+}
 WorkerTask.prototype.error = function (err) {
     if (!this.socket.connected) return;
     this.socket.workException(this.jobid,err);

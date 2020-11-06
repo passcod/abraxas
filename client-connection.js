@@ -145,6 +145,10 @@ ClientConnection.prototype.workStatus = function (jobid,percent) {
     this.socket.write({kind:'request',type:packet.types['WORK_STATUS'], args:{job:jobid, complete:percent*100, total: 100}});
 }
 
+ClientConnection.prototype.workProgress = function (jobid,complete,total) {
+    this.socket.write({kind:'request',type:packet.types['WORK_STATUS'], args:{job:jobid, complete, total}});
+}
+
 ClientConnection.prototype.echo = function (data, handler) {
     this.packets.acceptSerial('ECHO_RES', handler);
     this.socket.write({kind:'request',type:packet.types['ECHO_REQ'],body:data});
